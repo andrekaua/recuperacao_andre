@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de livros</title>
+</head>
+<body>
+    <label for="ipt_nome">Nome do livro:</label>
+    <input type="text" id="ipt_nome">
+    <label for="ipt_autor">Autor do livro:</label>
+    <input type="text" id="ipt_autor">
+    <label for="ipt_ano">Ano:</label>
+    <input type="text" id="ipt_ano">
+    <label for="ipt_estoque">Estoque:</label>
+    <input type="text" id="ipt_estoque">
+    <label for="ipt_genero">Gênero:</label>
+    <select name="" id="ipt_genero">
+        <option value="#">Escolha um gênero</option>
+        <option value="1">Horror</option>
+        <option value="2">Romance</option>
+        <option value="3">Poesia</option>
+        <option value="4">Fantasia</option>
+    </select>
+    <label for="ipt_preco_compra">Preço compra:</label>
+    <input type="text" id="ipt_preco_compra">
+    <button onclick="cadastrar()">Cadastrar</button>
+    <div id="most"></div>
+</body>
+<script>
+    function validarNomeAutor(autor) {
+            const caracteresInvalidos = ['0','1','2','3','4','5','6','7','8','9','!','@','#','$','%','&','*','(',')','-','+','=','{','}','[',']','|','\\',';',':','\'','\"',',','.','<','>','/','?','`','~'];
+            for (let i = 0; i < autor.length; i++) {
+                if (caracteresInvalidos.includes(autor[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+    function cadastrar() {
+        let nome = document.getElementById('ipt_nome').value;
+        let autor = document.getElementById('ipt_autor').value;
+        let ano = Number(document.getElementById('ipt_ano').value);
+        let estoque = Number(document.getElementById('ipt_estoque').value);
+        let genero_valor = Number(document.getElementById('ipt_genero').value);
+        let genero_texto = document.getElementById('ipt_genero').options[document.getElementById('ipt_genero').selectedIndex].text;
+        let preco_compra = Number(document.getElementById('ipt_preco_compra').value);
+        let preco_venda = 0;
+
+        let margem = 0;
+            if (preco_compra >= 100 && (genero_texto === "Horror" || genero_texto === "Romance")) {
+                margem = 0.225;
+            } else if (preco_compra <= 50 && (genero_texto === "Poesia" || genero_texto === "Horror")) {
+                margem = 0.25;
+            } else if (preco_compra > 50 && preco_compra < 100 && genero_texto === "Fantasia") {
+                margem = 0.275;
+            }
+
+            preco_venda = preco_compra * (1 + margem);
+
+
+        if (!validarNomeAutor(nome) || !validarNomeAutor(autor)) {
+                most.innerHTML = "Nome do autor e do livro não podem conter números ou símbolos.";
+                return;
+            }
+
+        if (!nome || isNaN(ano) || !autor || isNaN(estoque) || genero_texto === "#" || isNaN(preco_compra) || isNaN(preco_venda)) {
+            most.innerHTML = `Preencha todos os campos` ;
+            return;  
+        } else{
+            most.innerHTML = 'Livro cadastrado com sucesso'
+        }
+
+        let corpo = {
+                nome,
+                autor,
+                ano,
+                estoque,
+                fkgenero: Number(genero_valor),
+                preco_compra,
+                preco_venda
+            };
+
+        fetch(`/cadastro_livro_routes/cadastrar`, {
+            method: "post",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(corpo)
+        }).then(res => {
+                if (res.ok) {
+                    alert("Livro cadastrado com sucesso!");
+                    listar();
+                    most.innerText = "";
+                } else {
+                    throw new Error(`Erro ao cadastrar: ${res.status}`);
+                }
+            }).catch(erro => {
+                console.error("Erro na requisição:", erro);
+                most.innerText = `Erro: ${erro.message}`;
+            });
+        }
+
+
+
+    function listar() {
+            fetch("/cadastro_livro/listar")
+            .then(res => res.json())
+            .then(lista => {
+                let tabela = document.getElementById("tabela_livros");
+                tabela.innerHTML = "";
+                lista.forEach(livro => {
+                    tabela.innerHTML += `
+                        <tr>
+                            <td>${livro.id_livro}</td>
+                            <td>${livro.nome}</td>
+                            <td>${livro.autor}</td>
+                            <td>${livro.genero_nome}</td>
+                            <td>R$ ${livro.preco_compra.toFixed(2)}</td>
+                            <td>R$ ${livro.preco_venda.toFixed(2)}</td>
+                            <td>${livro.estoque}</td>
+                            <td>${livro.ano}</td>
+                            <td>
+                                <button onclick="carregarEdicao(${livro.id_livro})">Editar</button>
+                                <button onclick="deletar(${livro.id_livro})">Excluir</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        function carregarEdicao(id) {
+            fetch(`/cadastro_livro/buscar/${id}`)
+            .then(res => res.json())
+            .then(res => {
+                let livro = res[0];
+                document.getElementById("edit_id").value = livro.id_livro;
+                document.getElementById("edit_nome").value = livro.nome;
+                document.getElementById("edit_autor").value = livro.autor;
+                document.getElementById("edit_ano").value = livro.ano;
+                document.getElementById("edit_estoque").value = livro.estoque;
+                document.getElementById("edit_genero").value = livro.fk_genero;
+                document.getElementById("edit_preco_compra").value = livro.preco_compra;
+            });
+        }
+</script>
+</html>

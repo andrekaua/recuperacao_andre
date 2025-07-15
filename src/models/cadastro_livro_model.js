@@ -1,6 +1,6 @@
 var database = require("../database/config");
 
-function cadastra_livro() {
+function cadastra_livro(nome, autor, preco_compra, preco_venda, estoque, ano, fkgenero) {
     var instrucaoSql = `
         INSERT INTO livros (nome, autor, preco_compra, preco_venda, estoque, ano, fkgenero) VALUES (
         '${nome}',
@@ -9,7 +9,11 @@ function cadastra_livro() {
         '${preco_venda}',
         '${estoque}',
         '${ano}',
-        '${fkgenero}'
+        ${fkgenero}
         );
-    `
+    `;
+    console.log("Executando a instrução SQL: \n" + instrucaoSql);
+    return database.executar(instrucaoSql);
 }
+
+module.exports = { cadastra_livro }
